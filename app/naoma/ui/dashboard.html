@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NAOMA Evolutivo - DIAL</title>
+    <style>
+      :root { --bg:#0b1020; --card:#121a33; --muted:#9fb0ff; --text:#e7ecff; --accent:#6ee7ff; --good:#7CFFB2; --warn:#FFD37C; --bad:#FF7C7C; }
+      *{box-sizing:border-box;}
+      body{margin:0;font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background: radial-gradient(1200px 800px at 20% 10%, #1b2a66 0%, var(--bg) 55%); color: var(--text);}
+      .wrap{max-width:1100px;margin:0 auto;padding:16px;}
+      .grid{display:grid;grid-template-columns: 1.2fr .8fr;gap:14px;}
+      .card{background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)); border: 1px solid rgba(255,255,255,.10); border-radius: 18px; padding:14px; box-shadow: 0 10px 30px rgba(0,0,0,.22);}
+      h1{font-size:18px;margin:0 0 6px 0;letter-spacing:.2px}
+      .sub{font-size:12px;color:rgba(231,236,255,.72)}
+      .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+      .pill{border:1px solid rgba(255,255,255,.16); border-radius:999px; padding:6px 10px; font-size:12px; color: rgba(231,236,255,.85); background: rgba(0,0,0,.12)}
+      .btn{cursor:pointer; border:1px solid rgba(255,255,255,.18); background: rgba(0,0,0,.18); color: var(--text); padding:10px 12px; border-radius:12px; font-weight:600}
+      .btn:hover{border-color: rgba(110,231,255,.55)}
+      .btn.primary{background: linear-gradient(180deg, rgba(110,231,255,.25), rgba(110,231,255,.08)); border-color: rgba(110,231,255,.55)}
+      .btn.ghost{background: transparent}
+      textarea, input{width:100%; border-radius: 12px; border: 1px solid rgba(255,255,255,.14); background: rgba(0,0,0,.16); color: var(--text); padding: 10px 12px; outline:none}
+      textarea{min-height:100px; resize: vertical}
+      .kvs{display:grid;grid-template-columns: 1fr 1fr; gap:10px}
+      .k{font-size:12px;color:rgba(231,236,255,.70)}
+      .v{font-size:12px}
+      .list{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+      .tag{cursor:pointer; user-select:none; font-size:12px; border:1px solid rgba(255,255,255,.16); border-radius:999px; padding:6px 10px; background: rgba(0,0,0,.12)}
+      .tag.on{border-color: rgba(124,255,178,.65); background: rgba(124,255,178,.08)}
+      pre{white-space:pre-wrap; word-break:break-word; background: rgba(0,0,0,.18); border:1px solid rgba(255,255,255,.10); padding:10px 12px; border-radius: 12px; margin:10px 0 0 0; font-size:12px}
+      .status{font-weight:700}
+      .good{color:var(--good)} .warn{color:var(--warn)} .bad{color:var(--bad)}
+      @media (max-width: 880px){.grid{grid-template-columns:1fr}}
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="row" style="justify-content:space-between;margin-bottom:12px">
+        <div>
+          <h1>NAOMA Evolutivo — DIAL</h1>
+          <div class="sub" id="subtitle">14 unified AI architectures • MCP App</div>
+        </div>
+        <div class="row">
+          <span class="pill" id="envPill">Loading…</span>
+          <button class="btn ghost" id="langBtn">ES</button>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <div class="row" style="justify-content:space-between">
+            <div>
+              <div class="sub" id="qLabel">Query</div>
+            </div>
+            <button class="btn primary" id="runBtn">Run NAOMA Analyze</button>
+          </div>
+
+          <textarea id="query" placeholder="Ask something… e.g., Solve x^2 - 9 = 0, or scan this text for PII, or search my docs"></textarea>
+
+          <div class="sub" style="margin-top:10px" id="archLabel">Architectures (toggle)</div>
+          <div class="list" id="archList"></div>
+
+          <div class="row" style="margin-top:12px">
+            <button class="btn" id="securityBtn">Security Scan</button>
+            <button class="btn" id="mathBtn">Math: Solve</button>
+            <button class="btn" id="ragBtn">RAG: Search</button>
+          </div>
+
+          <pre id="output">Ready.</pre>
+        </div>
+
+        <div class="card">
+          <div class="row" style="justify-content:space-between">
+            <div>
+              <div class="sub" id="metaLabel">Live context</div>
+              <div style="font-size:14px;font-weight:700;margin-top:2px" id="ctxTitle">Tools & status</div>
+            </div>
+            <button class="btn" id="refreshBtn">Refresh</button>
+          </div>
+
+          <div class="kvs" style="margin-top:10px">
+            <div>
+              <div class="k" id="kTools">Tools</div>
+              <div class="v" id="vTools">—</div>
+            </div>
+            <div>
+              <div class="k" id="kRag">RAG docs</div>
+              <div class="v" id="vRag">—</div>
+            </div>
+            <div>
+              <div class="k" id="kModel">OpenAI</div>
+              <div class="v" id="vModel">—</div>
+            </div>
+            <div>
+              <div class="k" id="kLast">Last status</div>
+              <div class="v status" id="vLast">—</div>
+            </div>
+          </div>
+
+          <pre id="toolOut" style="margin-top:10px">No tool output yet.</pre>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const STR = {
+        en: {
+          subtitle: "14 unified AI architectures • MCP App",
+          qLabel: "Query",
+          run: "Run NAOMA Analyze",
+          arch: "Architectures (toggle)",
+          meta: "Live context",
+          ctx: "Tools & status",
+          refresh: "Refresh",
+          tools: "Tools",
+          rag: "RAG docs",
+          openai: "OpenAI",
+          last: "Last status",
+          ready: "Ready.",
+          env: "MCP widget ready",
+          errNoRuntime: "This UI must run inside ChatGPT Apps (Skybridge).",
+          runHint: "Type a query then click Run.",
+        },
+        es: {
+          subtitle: "14 arquitecturas IA unificadas • App MCP",
+          qLabel: "Consulta",
+          run: "Ejecutar análisis NAOMA",
+          arch: "Arquitecturas (activar/desactivar)",
+          meta: "Contexto en vivo",
+          ctx: "Herramientas y estado",
+          refresh: "Actualizar",
+          tools: "Herramientas",
+          rag: "Docs RAG",
+          openai: "OpenAI",
+          last: "Último estado",
+          ready: "Listo.",
+          env: "Widget MCP listo",
+          errNoRuntime: "Esta UI debe ejecutarse dentro de ChatGPT Apps (Skybridge).",
+          runHint: "Escribe una consulta y presiona Ejecutar.",
+        }
+      };
+
+      let lang = "en";
+      let selected = new Set();
+
+      function t(k){ return STR[lang][k] || k; }
+
+      function setLang(newLang){
+        lang = newLang;
+        document.getElementById("subtitle").textContent = t("subtitle");
+        document.getElementById("qLabel").textContent = t("qLabel");
+        document.getElementById("runBtn").textContent = t("run");
+        document.getElementById("archLabel").textContent = t("arch");
+        document.getElementById("metaLabel").textContent = t("meta");
+        document.getElementById("ctxTitle").textContent = t("ctx");
+        document.getElementById("refreshBtn").textContent = t("refresh");
+        document.getElementById("kTools").textContent = t("tools");
+        document.getElementById("kRag").textContent = t("rag");
+        document.getElementById("kModel").textContent = t("openai");
+        document.getElementById("kLast").textContent = t("last");
+        if(document.getElementById("output").textContent === "Ready.") document.getElementById("output").textContent = t("ready");
+        document.getElementById("langBtn").textContent = (lang === "en") ? "ES" : "EN";
+      }
+
+      function setStatus(ok, msg){
+        const el = document.getElementById("vLast");
+        el.textContent = msg;
+        el.className = "v status " + (ok ? "good" : "bad");
+      }
+
+      function requireRuntime(){
+        if(!window.openai || !window.openai.callTool){
+          document.getElementById("output").textContent = t("errNoRuntime");
+          setStatus(false, "No runtime");
+          return false;
+        }
+        return true;
+      }
+
+      async function refresh(){
+        if(!requireRuntime()) return;
+        try{
+          const tools = await window.openai.getTools();
+          document.getElementById("vTools").textContent = tools.length;
+          const status = await window.openai.callTool("naoma.status", {});
+          document.getElementById("vRag").textContent = status?.structuredContent?.rag_documents ?? "—";
+          document.getElementById("vModel").textContent = status?.structuredContent?.openai?.enabled ? "enabled" : "disabled";
+          setStatus(true, "OK");
+        }catch(e){
+          setStatus(false, "Error");
+        }
+      }
+
+      function renderArch(list){
+        const root = document.getElementById("archList");
+        root.innerHTML = "";
+        list.forEach(name => {
+          const tag = document.createElement("div");
+          tag.className = "tag on";
+          tag.textContent = name;
+          selected.add(name);
+          tag.onclick = () => {
+            if(selected.has(name)){ selected.delete(name); tag.classList.remove("on"); }
+            else { selected.add(name); tag.classList.add("on"); }
+          };
+          root.appendChild(tag);
+        });
+      }
+
+      async function call(name, args){
+        const out = document.getElementById("toolOut");
+        out.textContent = "Calling " + name + "…";
+        const res = await window.openai.callTool(name, args);
+        out.textContent = JSON.stringify(res?.structuredContent ?? res, null, 2);
+        return res;
+      }
+
+      async function runAnalyze(){
+        if(!requireRuntime()) return;
+        const q = document.getElementById("query").value.trim();
+        if(!q){
+          document.getElementById("output").textContent = t("runHint");
+          return;
+        }
+        try{
+          const res = await call("naoma.analyze", {query: q, architectures: Array.from(selected), language: lang});
+          document.getElementById("output").textContent = res?.content?.[0]?.text || "OK";
+          setStatus(true, "OK");
+        }catch(e){
+          document.getElementById("output").textContent = String(e);
+          setStatus(false, "Error");
+        }
+      }
+
+      async function securityScan(){
+        const q = document.getElementById("query").value.trim();
+        if(!q) return;
+        await call("security.scan", {text: q});
+      }
+      async function mathSolve(){
+        const q = document.getElementById("query").value.trim();
+        if(!q) return;
+        await call("math.solve_equation", {equation: q, variable: "x"});
+      }
+      async function ragSearch(){
+        const q = document.getElementById("query").value.trim();
+        if(!q) return;
+        await call("rag.search", {query: q, top_k: 5});
+      }
+
+      document.getElementById("runBtn").onclick = runAnalyze;
+      document.getElementById("refreshBtn").onclick = refresh;
+      document.getElementById("securityBtn").onclick = securityScan;
+      document.getElementById("mathBtn").onclick = mathSolve;
+      document.getElementById("ragBtn").onclick = ragSearch;
+      document.getElementById("langBtn").onclick = () => setLang(lang === "en" ? "es" : "en");
+
+      // Boot
+      setLang("en");
+      document.getElementById("envPill").textContent = t("env");
+
+      // Load architectures from server meta if available
+      (async () => {
+        if(!requireRuntime()) return;
+        try{
+          const arch = await window.openai.callTool("naoma.architectures", {});
+          renderArch(arch?.structuredContent?.architectures || []);
+          await refresh();
+        }catch(e){
+          setStatus(false, "Error");
+        }
+      })();
+    </script>
+  </body>
+</html>
